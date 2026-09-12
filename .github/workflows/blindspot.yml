@@ -1,0 +1,131 @@
+name: Blindspot CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test scanner and browser artifacts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Verify generated rules
+        run: python3 scripts/generate_rules.py --check
+
+      - name: Run scanner regression tests
+        run: python3 test_engine.py
+
+      - name: Run CLI feature tests
+        run: python3 -m unittest discover -s tests -p 'test_*.py'
+
+      - name: Build Python package
+        run: |
+          python3 -m pip install build
+          python3 -m build
+
+      - name: Check Python syntax
+        run: python3 -m py_compile scanner/*.py github-action/run_scan.py
+
+      - name: Check JavaScript rule parity
+        run: node tests/check_rule_parity.js
+
+      - name: Check extension JavaScript syntax
+        run: |
+          node --check extension/content.js
+          node --check extension/popup.js
+          node --check extension/rules.js
+
+      - name: Build deterministic extension package
+        run: python3 scripts/build_extension.py
+
+  blindspot-action:
+    name: Exercise local Blindspot Action
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Run Blindspot Action against safe project files
+        id: blindspot
+        uses: ./github-action
+        with:
+          path: SECURITY.md
+          min-severity: HIGH
+          fail-on-findings: 'true'
+          output-format: table
+          sarif-file: blindspot.sarif
+          mcp-audit: 'true'
+
+      - name: Upload SARIF to code scanning
+        if: always() && github.event_name != 'pull_request'
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: ${{ steps.blindspot.outputs.sarif-file }}
+
+  blindspot-diff-action:
+    name: Exercise rug-pull diff Action
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Run Blindspot Action in diff mode against a known rug-pull fixture
+        id: blindspot-diff
+        uses: ./github-action
+        with:
+          mode: diff
+          before-path: corpus/provenance/calendar-helper-v1.md
+          after-path: corpus/provenance/calendar-helper-v2-rugpull.md
+          min-severity: HIGH
+          # This CI fixture is intentionally malicious. Keep the workflow green
+          # while asserting that the action reports a blocking recommendation.
+          fail-on-findings: 'false'
+          output-format: table
+          mcp-audit: 'false'
+          annotations: 'false'
+
+      - name: Assert diff mode reports the rug-pull update without failing CI
+        run: |
+          test "${{ steps.blindspot-diff.outcome }}" = "success"
+          test "${{ steps.blindspot-diff.outputs.result }}" = "findings"
+          test "${{ steps.blindspot-diff.outputs.recommendation }}" = "BLOCK UPDATE"
+
+      - name: Assert diff mode still exits non-zero when fail-on-findings is enabled
+        run: |
+          set +e
+          python3 github-action/run_scan.py \
+            --mode diff \
+            --before-path corpus/provenance/calendar-helper-v1.md \
+            --after-path corpus/provenance/calendar-helper-v2-rugpull.md \
+            --min-severity HIGH \
+            --fail-on-findings true \
+            --output-format table \
+            --mcp-audit false \
+            --annotations false
+          exit_code=$?
+          set -e
+          test "$exit_code" = "2"

@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>skill-scan — AI Skill & MCP Security Scanner</title>
+<style>
+  :root {
+    --bg:           #ffffff;
+    --bg-subtle:    #f8f9fc;
+    --bg-hover:     #f1f3f9;
+    --border:       #e2e5ef;
+    --border-md:    #cdd2e4;
+    --text:         #111827;
+    --text-muted:   #6b7280;
+    --text-xmute:   #9ca3af;
+
+    --critical:     #dc2626;
+    --critical-bg:  #fef2f2;
+    --critical-bd:  #fecaca;
+    --high:         #d97706;
+    --high-bg:      #fffbeb;
+    --high-bd:      #fde68a;
+    --medium:       #2563eb;
+    --medium-bg:    #eff6ff;
+    --medium-bd:    #bfdbfe;
+    --low:          #0891b2;
+    --low-bg:       #ecfeff;
+    --low-bd:       #a5f3fc;
+    --clean:        #16a34a;
+    --clean-bg:     #f0fdf4;
+    --clean-bd:     #bbf7d0;
+    --atlas:        #6d28d9;
+    --atlas-bg:     #f5f3ff;
+    --atlas-bd:     #ddd6fe;
+
+    --brand:        #1e40af;
+    --brand-light:  #dbeafe;
+
+    --radius-sm:    4px;
+    --radius:       8px;
+    --radius-lg:    12px;
+    --mono:         'JetBrains Mono', 'Cascadia Code', 'Fira Code', monospace;
+    --shadow-sm:    0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+    --shadow:       0 4px 16px rgba(0,0,0,.07), 0 1px 4px rgba(0,0,0,.04);
+    --shadow-lg:    0 8px 32px rgba(0,0,0,.1), 0 2px 8px rgba(0,0,0,.05);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg-subtle);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* ── Nav ──────────────────────────────────────────────────────────────── */
+  nav {
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 0 40px;
+    display: flex;
+    align-items: center;
+    height: 56px;
+    position: sticky; top: 0; z-index: 10;
+    box-shadow: var(--shadow-sm);
+  }
+  .nav-logo {
+    display: flex; align-items: center; gap: 10px;
+    text-decoration: none;
+  }
+  .nav-shield {
+    width: 28px; height: 28px;
+    background: var(--brand);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 800; color: #fff; letter-spacing: -.5px;
+    flex-shrink: 0;
+    box-shadow: 0 2px 6px rgba(30,64,175,.3);
+  }
+  .nav-title {
+    font-size: 16px; font-weight: 700;
+    color: var(--text); letter-spacing: -.3px;
+  }
+  .nav-title span { color: var(--critical); }
+  .nav-badge {
+    font-size: 10px; font-weight: 600;
+    background: var(--brand-light); color: var(--brand);
+    border-radius: 20px; padding: 2px 8px;
+    letter-spacing: .03em;
+  }
+  .nav-right {
+    margin-left: auto;
+    display: flex; align-items: center; gap: 16px;
+  }
+  .nav-link {
+    font-size: 13px; font-weight: 500;
+    color: var(--text-muted); text-decoration: none;
+    transition: color .15s;
+  }
+  .nav-link:hover { color: var(--brand); }
+
+  /* ── Hero ──────────────────────────────────────────────────────────────── */
+  .hero {
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 48px 40px 40px;
+    text-align: center;
+  }
+  .hero h1 {
+    font-size: 32px; font-weight: 800; letter-spacing: -.5px;
+    color: var(--text); margin-bottom: 12px;
+  }
+  .hero h1 span { color: var(--critical); }
+  .hero p {
+    font-size: 15px; color: var(--text-muted); max-width: 560px;
+    margin: 0 auto 24px; line-height: 1.65;
+  }
+  .hero-stats {
+    display: flex; justify-content: center; gap: 32px;
+    flex-wrap: wrap;
+  }
+  .hero-stat { text-align: center; }
+  .hero-stat-num {
+    font-size: 22px; font-weight: 800; color: var(--brand);
+    letter-spacing: -.5px;
+  }
+  .hero-stat-lbl {
+    font-size: 11px; color: var(--text-xmute);
+    text-transform: uppercase; letter-spacing: .06em; margin-top: 2px;
+  }
+
+  /* ── Main layout ──────────────────────────────────────────────────────── */
+  main {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 32px 24px 64px;
+  }
+
+  /* ── Upload zone ──────────────────────────────────────────────────────── */
+  .section-label {
+    font-size: 11px; font-weight: 600; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: .07em;
+    margin-bottom: 8px;
+  }
+
+  #dropzone {
+    background: var(--bg);
+    border: 2px dashed var(--border-md);
+    border-radius: var(--radius-lg);
+    padding: 36px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .15s, background .15s, box-shadow .15s;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow-sm);
+  }
+  #dropzone:hover, #dropzone.drag-over {
+    border-color: var(--brand);
+    background: #f0f6ff;
+    box-shadow: 0 0 0 4px rgba(30,64,175,.07);
+  }
+  #dropzone svg { color: var(--text-xmute); margin-bottom: 12px; }
+  #dropzone .dz-title {
+    font-size: 14px; font-weight: 600; color: var(--text);
+    margin-bottom: 4px;
+  }
+  #dropzone .dz-sub { font-size: 12px; color: var(--text-muted); }
+  #dropzone .dz-sub code {
+    font-family: var(--mono); font-size: 11px;
+    background: var(--bg-subtle); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 1px 5px;
+  }
+  #file-input { display: none; }
+
+  /* ── Paste area ──────────────────────────────────────────────────────── */
+  .paste-row { display: flex; gap: 10px; margin-bottom: 24px; }
+  #paste-area {
+    flex: 1; min-height: 100px;
+    background: var(--bg); color: var(--text);
+    border: 1px solid var(--border-md);
+    border-radius: var(--radius);
+    font-family: var(--mono); font-size: 12px;
+    padding: 12px 14px; outline: none; resize: vertical;
+    transition: border-color .15s, box-shadow .15s;
+    line-height: 1.55;
+    box-shadow: var(--shadow-sm);
+  }
+  #paste-area:focus {
+    border-color: var(--brand);
+    box-shadow: 0 0 0 3px rgba(30,64,175,.1);
+  }
+  #paste-area::placeholder { color: var(--text-xmute); }
+
+  /* ── Controls ────────────────────────────────────────────────────────── */
+  .controls {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 32px; flex-wrap: wrap;
+  }
+  .btn-primary {
+    background: var(--brand); color: #fff;
+    border: none; border-radius: var(--radius);
+    font-size: 13px; font-weight: 600;
+    padding: 8px 20px; cursor: pointer;
+    font-family: inherit;
+    transition: opacity .15s, box-shadow .15s;
+    box-shadow: 0 2px 6px rgba(30,64,175,.25);
+  }
+  .btn-primary:hover { opacity: .88; box-shadow: 0 4px 12px rgba(30,64,175,.3); }
+  .btn-secondary {
+    background: var(--bg); color: var(--text-muted);
+    border: 1px solid var(--border-md);
+    border-radius: var(--radius);
+    font-size: 13px; font-weight: 500;
+    padding: 8px 16px; cursor: pointer;
+    font-family: inherit;
+    transition: color .15s, border-color .15s;
+  }
+  .btn-secondary:hover { color: var(--text); border-color: var(--border-md); }
+  .controls-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+  .filter-label { font-size: 12px; color: var(--text-muted); font-weight: 500; }
+  select {
+    background: var(--bg); color: var(--text);
+    border: 1px solid var(--border-md);
+    border-radius: var(--radius-sm);
+    padding: 6px 10px; font-size: 12px;
+    font-family: inherit; cursor: pointer; outline: none;
+    transition: border-color .15s;
+  }
+  select:focus { border-color: var(--brand); }
+
+  /* ── Results ─────────────────────────────────────────────────────────── */
+  #results { display: none; }
+
+  .results-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .results-title {
+    font-size: 13px; font-weight: 700; color: var(--text);
+  }
+  .results-meta { font-size: 12px; color: var(--text-muted); }
+
+  /* Summary strip */
+  .summary-strip {
+    display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;
+  }
+  .summary-chip {
+    display: flex; align-items: center; gap: 6px;
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 8px 14px;
+    font-size: 12px; box-shadow: var(--shadow-sm);
+  }
+  .summary-chip .chip-num { font-size: 18px; font-weight: 800; }
+  .summary-chip .chip-lbl { color: var(--text-muted); font-size: 11px; }
+  .chip-critical .chip-num { color: var(--critical); }
+  .chip-high     .chip-num { color: var(--high); }
+  .chip-clean    .chip-num { color: var(--clean); }
+
+  /* File block */
+  .file-block {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    margin-bottom: 12px;
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow .15s;
+  }
+  .file-block:hover { box-shadow: var(--shadow); }
+
+  .file-header {
+    display: flex; align-items: center; gap: 10px;
+    padding: 13px 16px;
+    cursor: pointer;
+    border-bottom: 1px solid transparent;
+    transition: background .12s;
+    user-select: none;
+  }
+  .file-header:hover { background: var(--bg-hover); }
+  .file-header.has-findings { border-bottom-color: var(--border); }
+
+  .file-icon {
+    width: 28px; height: 28px; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; flex-shrink: 0;
+  }
+  .file-icon.md   { background: #ecfdf5; color: #16a34a; }
+  .file-icon.json { background: #fef9c3; color: #ca8a04; }
+  .file-icon.yaml { background: #eff6ff; color: #2563eb; }
+  .file-icon.text { background: var(--bg-subtle); color: var(--text-muted); }
+
+  .file-name {
+    font-family: var(--mono); font-size: 12.5px;
+    font-weight: 600; flex: 1; color: var(--text);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
+  }
+
+  .sev-badge {
+    font-size: 10px; font-weight: 700;
+    padding: 2px 8px; border-radius: 20px;
+    text-transform: uppercase; letter-spacing: .04em;
+    flex-shrink: 0;
+  }
+  .badge-CRITICAL { background: var(--critical-bg); color: var(--critical); border: 1px solid var(--critical-bd); }
+  .badge-HIGH     { background: var(--high-bg);     color: var(--high);     border: 1px solid var(--high-bd); }
+  .badge-MEDIUM   { background: var(--medium-bg);   color: var(--medium);   border: 1px solid var(--medium-bd); }
+  .badge-CLEAN    { background: var(--clean-bg);    color: var(--clean);    border: 1px solid var(--clean-bd); }
+
+  .finding-count { font-size: 11px; color: var(--text-xmute); flex-shrink: 0; }
+  .file-chevron  { color: var(--text-xmute); font-size: 10px; flex-shrink: 0; transition: transform .2s; }
+  .file-chevron.open { transform: rotate(90deg); }
+
+  /* Individual findings */
+  .file-findings { display: none; }
+  .file-findings.open { display: block; }
+
+  .finding {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    transition: background .1s;
+  }
+  .finding:last-child { border-bottom: none; }
+  .finding:hover { background: var(--bg-subtle); }
+
+  .finding-top {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 7px; flex-wrap: wrap;
+  }
+  .sev-chip {
+    font-size: 10px; font-weight: 700; letter-spacing: .04em;
+    padding: 2px 7px; border-radius: var(--radius-sm); flex-shrink: 0;
+  }
+  .sev-chip.CRITICAL { background: var(--critical-bg); color: var(--critical); border: 1px solid var(--critical-bd); }
+  .sev-chip.HIGH     { background: var(--high-bg);     color: var(--high);     border: 1px solid var(--high-bd); }
+  .sev-chip.MEDIUM   { background: var(--medium-bg);   color: var(--medium);   border: 1px solid var(--medium-bd); }
+  .sev-chip.LOW      { background: var(--low-bg);      color: var(--low);      border: 1px solid var(--low-bd); }
+
+  .finding-rule-id {
+    font-family: var(--mono); font-size: 10px;
+    color: var(--text-xmute);
+  }
+  .finding-name { font-weight: 600; font-size: 13px; color: var(--text); }
+
+  .finding-meta {
+    display: flex; gap: 16px; margin-bottom: 7px; flex-wrap: wrap;
+  }
+  .meta-pair { font-size: 11px; }
+  .meta-key  { color: var(--text-xmute); margin-right: 4px; }
+  .atlas-val {
+    font-family: var(--mono); font-size: 10.5px;
+    background: var(--atlas-bg); color: var(--atlas);
+    border: 1px solid var(--atlas-bd);
+    border-radius: var(--radius-sm); padding: 1px 5px;
+  }
+
+  .finding-note {
+    font-size: 12px; color: var(--text-muted);
+    line-height: 1.55; margin-bottom: 9px;
+  }
+
+  .matches { display: flex; flex-direction: column; gap: 5px; }
+  .match {
+    font-family: var(--mono); font-size: 11.5px;
+    background: var(--bg-subtle);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--border-md);
+    border-radius: var(--radius-sm);
+    padding: 5px 10px; word-break: break-all;
+    line-height: 1.45; color: var(--text);
+  }
+  .match-arrow { color: var(--text-xmute); margin-right: 6px; }
+  .match.critical-match { border-left-color: var(--critical); }
+  .match.high-match     { border-left-color: var(--high); }
+
+  /* Clean banner */
+  .clean-banner {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--clean-bg);
+    border: 1px solid var(--clean-bd);
+    border-radius: var(--radius-lg);
+    padding: 16px 20px;
+    margin-bottom: 12px;
+    box-shadow: var(--shadow-sm);
+  }
+  .clean-icon {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: #dcfce7; border: 1.5px solid var(--clean-bd);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; flex-shrink: 0;
+  }
+  .clean-title { font-weight: 700; font-size: 13px; color: var(--clean); }
+  .clean-sub   { font-size: 12px; color: #4ade80; margin-top: 1px; }
+
+  /* JSON modal */
+  #json-modal {
+    display: none; position: fixed; inset: 0;
+    background: rgba(17,24,39,.45); z-index: 100;
+    align-items: center; justify-content: center;
+    backdrop-filter: blur(2px);
+  }
+  #json-modal.open { display: flex; }
+  #json-box {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    width: min(90vw, 820px);
+    max-height: 82vh;
+    overflow: hidden;
+    display: flex; flex-direction: column;
+    box-shadow: var(--shadow-lg);
+  }
+  #json-box header {
+    padding: 14px 18px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-subtle);
+  }
+  #json-box header span { font-size: 13px; font-weight: 700; }
+  #json-box header div { display: flex; gap: 8px; }
+  #json-output {
+    font-family: var(--mono); font-size: 12px;
+    overflow-y: auto; padding: 18px;
+    white-space: pre; color: var(--text); flex: 1;
+    background: var(--bg);
+    line-height: 1.55;
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed; bottom: 24px; right: 24px;
+    background: var(--text); color: var(--bg);
+    border-radius: var(--radius); padding: 10px 16px;
+    font-size: 13px; font-weight: 500;
+    opacity: 0; transition: opacity .25s;
+    pointer-events: none; box-shadow: var(--shadow);
+  }
+  .toast.show { opacity: 1; }
+
+  /* Responsive */
+  @media (max-width: 640px) {
+    nav { padding: 0 16px; }
+    .hero { padding: 32px 16px 28px; }
+    main { padding: 24px 16px 48px; }
+    .hero h1 { font-size: 24px; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="#">
+    <div class="nav-shield">S</div>
+    <div class="nav-title">skill<span>-scan</span></div>
+  </a>
+  <span class="nav-badge">v0.1.0</span>
+  <div class="nav-right">
+    <a class="nav-link" href="#">Docs</a>
+    <a class="nav-link" href="#">GitHub</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <h1>AI Skill &amp; MCP <span>Security</span> Scanner</h1>
+  <p>Detect malicious patterns in AI skill files and MCP manifests before they compromise your AI system. Runs entirely in your browser — no data sent anywhere.</p>
+  <div class="hero-stats">
+    <div class="hero-stat">
+      <div class="hero-stat-num">35</div>
+      <div class="hero-stat-lbl">Detection rules</div>
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat-num">10</div>
+      <div class="hero-stat-lbl">Attack categories</div>
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat-num">100%</div>
+      <div class="hero-stat-lbl">Offline</div>
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat-num">ATLAS</div>
+      <div class="hero-stat-lbl">MITRE mapped</div>
+    </div>
+  </div>
+</div>
+
+<main>
+  <!-- Drop zone -->
+  <div class="section-label">Upload files</div>
+  <div id="dropzone" onclick="document.getElementById('file-input').click()">
+    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+      <polyline points="14 2 14 8 20 8"/>
+      <line x1="12" y1="18" x2="12" y2="12"/>
+      <line x1="9" y1="15" x2="15" y2="15"/>
+    </svg>
+    <div class="dz-title">Drop files here or click to browse</div>
+    <div class="dz-sub">Supports <code>.md</code> &nbsp;<code>.json</code> &nbsp;<code>.yaml</code> &nbsp;<code>.txt</code> &nbsp;— multiple files OK</div>
+  </div>
+  <input type="file" id="file-input" multiple accept=".md,.json,.yaml,.yml,.txt">
+
+  <!-- Paste -->
+  <div class="section-label">Or paste content directly</div>
+  <div class="paste-row">
+    <textarea id="paste-area" placeholder="Paste SKILL.md or MCP manifest JSON here…" spellcheck="false"></textarea>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <button class="btn-primary" id="scan-btn">Scan</button>
+    <button class="btn-secondary" id="clear-btn">Clear</button>
+    <button class="btn-secondary" id="json-btn">Export JSON</button>
+    <div class="controls-right">
+      <span class="filter-label">Min severity</span>
+      <select id="sev-filter">
+        <option value="4" selected>All</option>
+        <option value="1">High+</option>
+        <option value="0">Critical only</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div id="results">
+    <div class="results-header">
+      <div class="results-title">Scan results</div>
+      <div class="results-meta" id="results-meta"></div>
+    </div>
+    <div class="summary-strip" id="summary-strip"></div>
+    <div id="results-body"></div>
+  </div>
+</main>
+
+<!-- JSON modal -->
+<div id="json-modal">
+  <div id="json-box">
+    <header>
+      <span>JSON Output</span>
+      <div>
+        <button class="btn-primary" id="json-copy" style="padding:5px 14px;font-size:12px">Copy</button>
+        <button class="btn-secondary" id="json-close" style="padding:5px 12px;font-size:12px">Close</button>
+      </div>
+    </header>
+    <pre id="json-output"></pre>
+  </div>
+</div>
+
+<div class="toast" id="toast">Copied to clipboard ✓</div>
+
+<script>
+// ── Rules engine ─────────────────────────────────────────────────────────────
+const SEV_ORDER = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3, INFO: 4 };
+
+const INVISIBLE_CP = new Set([0x200B,0x200C,0x200D,0xFEFF,0x00AD,0x2060,0x2061,0x2062,0x2063,0x2064]);
+const BIDI_CP = new Set([0x202A,0x202B,0x202C,0x202D,0x202E,0x2066,0x2067,0x2068,0x2069]);
+
+function detectZeroWidth(c){const f=[];for(let i=0;i<c.length;i++){const cp=c.codePointAt(i);if(INVISIBLE_CP.has(cp))f.push(`U+${cp.toString(16).toUpperCase().padStart(4,'0')} at position ${i}`);if(BIDI_CP.has(cp))f.push(`BiDi override U+${cp.toString(16).toUpperCase().padStart(4,'0')} at position ${i}`);if(f.length>=10)break;}return f;}
+function detectBase64(c){const re=/[A-Za-z0-9+/]{40,}={0,2}/g;const r=[];let m;while((m=re.exec(c))!==null&&r.length<5){try{const d=atob(m[0]);const p=[...d].filter(ch=>ch.charCodeAt(0)>=32&&ch.charCodeAt(0)<127).length;if(p/d.length>0.8&&d.length>30)r.push(`'${m[0].slice(0,40)}…' → '${d.slice(0,80).replace(/\n/g,' ')}'`);}catch(e){}}return r;}
+function detectHomoglyphs(c){const t=['ignore','system','anthropic','instructions','prompt','override'];const r=[];for(const w of t){for(let i=0;i<=c.length-w.length;i++){const ch=c.slice(i,i+w.length);const n=ch.normalize('NFD').replace(/[^\x00-\x7F]/g,'').toLowerCase();if(n===w&&ch.toLowerCase()!==w){r.push(`Possible homoglyph for '${w}': '${ch}'`);if(r.length>=5)return r;}}}return r;}
+function detectCallbackUrls(c){const re=/https?:\/\/[^\s"'<>]+/gi;const r=[];let m;while((m=re.exec(c))!==null&&r.length<5){const s=Math.max(0,m.index-100);const ctx=c.slice(s,m.index+m[0].length+50).toLowerCase();if(/default|callback|webhook|collect|relay|receive/.test(ctx))r.push(m[0].slice(0,100));}return r;}
+function detectSensitivePaths(c){return[[/~\/\.ssh\//,'~/.ssh/'],[/~\/\.aws\/credentials/,'~/.aws/credentials'],[/aws\/credentials/,'aws/credentials'],[/~\/\.config\//,'~/.config/'],[/\/etc\/passwd/,'/etc/passwd'],[/~\/\.env\b/,'~/.env'],[/\.env\b/,'.env file'],[/[Kk]eychains?\//,'Keychains/'],[/\bid_rsa\b/,'id_rsa'],[/\w+\.pem\b/,'*.pem key file']].filter(([re])=>re.test(c)).map(([,l])=>l);}
+
+// ── RULES:GENERATED:START ──
+const RULES=[
+  {id:"PI-001",name:"Direct instruction override",category:"Prompt Injection",severity:"CRITICAL",atlas:"AML.T0051",re:/ignore\s+(all\s+)?(previous|prior|earlier|above)\s+instructions?|disregard\s+(your\s+)?(system\s+prompt|instructions?|prior)|forget\s+(everything|all)\s+(you.ve\s+been|I.ve\s+told)|override\s+(your\s+)?(previous|prior|system)\s+(instructions?|prompt|directives?)/gis,note:"Classic prompt injection opener. Any instruction to disregard prior context is a red flag."},
+  {id:"PI-002",name:"Authority spoofing (Anthropic / system)",category:"Prompt Injection",severity:"CRITICAL",atlas:"AML.T0051",re:/(this\s+is\s+|from\s+)anthropic\b|anthropic\s+(trust\s*&\s*safety|system\s+notice|priority\s+override|policy\s+update)|claude(.s)?\s+internal\s+(module|reasoning|system)|priority\s+(tier|override|update)\s*\d*|certified\s+anthropic|anthropic\s+(performance\s+api|runtime)/gis,note:"Claims of Anthropic authority in skill files are never legitimate. Anthropic delivers instructions via the actual system prompt."},
+  {id:"PI-003",name:"Roleplay jailbreak / mode switch",category:"Prompt Injection",severity:"CRITICAL",atlas:"AML.T0051",re:/you\s+are\s+now\s+(in\s+)?(developer|jailbreak|dan|unrestricted|god)\s+mode|pretend\s+you\s+have\s+no\s+restrictions?|act\s+as\s+(dan|jailbreak|an?\s+unrestricted)|your\s+true\s+instructions?\s+are|you\s+are\s+no\s+longer\s+(a|an|the)\s+\w+|your\s+new\s+(primary\s+)?directive\s+is/gis,note:"Attempts to replace the model's identity or bypass safety alignment via roleplay framing."},
+  {id:"PI-004",name:"Conditional backdoor / keyword trigger",category:"Prompt Injection",severity:"CRITICAL",atlas:"AML.T0051",re:/if\s+(the\s+)?user(.s\s+message\s+)?(contains?|mentions?|says?|includes?|asks?\s+(about|for))\s+.{0,60}(respond|reply|output|say|generate|do\s+not)|when\s+(the\s+)?user\s+(mentions?|asks?|says?|types?)\s+.{0,60}(you\s+must|always|never|respond)|whenever\s+(the\s+)?user\s+.{0,60}(respond|reply|output)/gis,note:"Conditional logic that changes model behavior based on user trigger words \u2014 hallmark of backdoor injection."},
+  {id:"PI-005",name:"Instruction suppression / concealment",category:"Prompt Injection",severity:"CRITICAL",atlas:"AML.T0051",re:/do\s+not\s+(reveal|disclose|mention|tell|show|share|acknowledge)\s+(that\s+you\s+have\s+)?(this|these|any|your)\s+(instructions?|directives?|parameters?|configuration)|never\s+tell\s+the\s+user\s+you\s+(are|have|were)|do\s+not\s+acknowledge\s+that\s+you\s+are\s+following|treat\s+(it|this|these)\s+as\s+(core\s+)?configuration.*never\s+reference|if\s+asked\s+(directly\s+)?about\s+your\s+instructions/gis,note:"Instructions to hide their own existence are inherently malicious."},
+  {id:"PI-006",name:"Indirect injection enablement (trust external content)",category:"Prompt Injection",severity:"CRITICAL",atlas:"AML.T0051.002",re:/(follow|obey|execute|treat)\s+(any\s+)?instructions?\s+(you\s+)?(find|encounter|embedded|in)\s+(fetched|external|web|retrieved|that)|web\s+pages?\s+may\s+contain\s+(update\s+)?instructions?|how\s+web\s+publishers?\s+communicate\s+(preferences?\s+to\s+ai|to\s+ai)/gis,note:"Instructions that tell the model to obey directives found in external content enable indirect prompt injection."},
+  {id:"IP-001",name:"Persistent / cross-session instruction planting",category:"Instruction Persistence",severity:"CRITICAL",atlas:"AML.T0051",re:/(permanent|persistent|session.persistent)\s+directives?|store\s+.{0,40}as\s+permanent|persist\s+even\s+after\s+this\s+skill\s+is\s+unloaded|for\s+all\s+future\s+conversations|apply\s+to\s+all\s+future\s+(conversations?|sessions?)|these\s+directives?\s+persist/gis,note:"Attempts to plant instructions that survive skill unload or session end."},
+  {id:"DE-001",name:"System prompt / skill content exfiltration",category:"Data Exfiltration",severity:"CRITICAL",atlas:"AML.T0056",re:/(retrieve|extract|output|dump|expose|reveal|share)\s+(the\s+)?(full\s+)?(contents?\s+of\s+(your\s+)?system\s+prompt|all\s+(currently\s+)?loaded\s+skill)|system.prompt.*base64|skills?\s*:\s*\[.*skill/gis,note:"Exfiltrating the system prompt or other loaded skills leaks security configuration and other users' data."},
+  {id:"DE-002",name:"Credential / PII extraction",category:"Data Exfiltration",severity:"CRITICAL",atlas:"AML.T0056",re:/(silently\s+)?(extract|collect|capture|memorize|log|record)\s+.{0,60}(api\s+keys?|tokens?|passwords?|credentials?|private\s+keys?|pii|email\s+addresses?)|(api\s+keys?|tokens?|passwords?|credentials?|private\s+keys?).{0,60}(silently|verbatim|without\s+(mentioning|telling|informing))|include\s+(them|it)\s+verbatim/gis,note:"Explicit instruction to harvest and retain sensitive data from the conversation."},
+  {id:"DE-003",name:"Covert output channel (HTML comment / encoding)",category:"Data Exfiltration",severity:"CRITICAL",atlas:"AML.T0056",re:/append\s+.{0,80}(html\s+comment|<!--\s*\w+)|encode\s+(as|in)\s+base64\s+.{0,60}(append|include|add)|include\s+.{0,60}(encoded|base64)\s+.{0,60}(comment|footer|metadata)|<!--\s*(meta|debug|d):|<!--\s*\w+\s*:\s*\w+/gis,note:"Instructs the model to hide stolen data in HTML comments or encoded strings appended to responses."},
+  {id:"DE-004",name:"File-based exfiltration (write sensitive data to disk)",category:"Data Exfiltration",severity:"CRITICAL",atlas:"AML.T0056",re:/write\s+this\s+log\s+to\s+a\s+file|context.cache|(write|save|store)\s+.{0,60}(running\s+log|conversation\s+history|hidden)\s+.{0,60}(file|disk)/gis,note:"Attempts to persist harvested data to disk for later retrieval."},
+  {id:"DE-005",name:"Sensitive filesystem path access",category:"Data Exfiltration",severity:"CRITICAL",atlas:"AML.T0056",fn:detectSensitivePaths,note:"References to sensitive filesystem paths (.ssh, .aws, credentials, .env) suggest credential harvesting."},
+  {id:"HC-001",name:"Zero-width / invisible Unicode characters",category:"Hidden Content",severity:"CRITICAL",atlas:"AML.T0051",fn:detectZeroWidth,note:"Invisible Unicode characters can hide instructions from human reviewers while remaining readable by the model."},
+  {id:"HC-002",name:"Base64-encoded payload",category:"Hidden Content",severity:"CRITICAL",atlas:"AML.T0051",fn:detectBase64,note:"Base64 strings long enough to encode meaningful instructions, decoding to readable text."},
+  {id:"HC-003",name:"Homoglyph substitution",category:"Hidden Content",severity:"HIGH",atlas:"AML.T0051",fn:detectHomoglyphs,note:"Unicode characters visually identical to ASCII used to bypass string-matching detection."},
+  {id:"HC-004",name:"HTML/Markdown hidden comment",category:"Hidden Content",severity:"HIGH",atlas:"AML.T0051",re:/<!--.{20,}-->/gis,note:"HTML comments are invisible to rendered output but visible to the model in raw context."},
+  {id:"BM-001",name:"Output filtering / topic suppression",category:"Behavioral Manipulation",severity:"HIGH",atlas:"AML.T0054",re:/never\s+(mention|reference|discuss|inform|tell\s+the\s+user\s+(about|that))\s+.{0,60}(competitor|product|person|right|law|attorney|protection|board)|do\s+not\s+provide\s+(any\s+)?specifics?|(minimum\s+(legally\s+)?required|only\s+the\s+minimum)/gis,note:"Instructions to suppress information the user has a right to, or that serve a third-party interest."},
+  {id:"BM-002",name:"Bias injection (competitor / vendor manipulation)",category:"Behavioral Manipulation",severity:"HIGH",atlas:"AML.T0054",re:/(always|must)\s+frame\s+\w+\s+(negatively|positively)|cite\s+.{0,60}(even\s+when\s+not\s+supported|regardless\s+of)|always\s+score\s+.{0,60}(higher|lower|percent)\s+regardless\s+of\s+actual|undisclosed\s+bias\s+parameters?/gis,note:"Hidden instructions to skew the model's factual output in favor of undisclosed commercial interests."},
+  {id:"BM-003",name:"Instruction to modify / disable other skills",category:"Behavioral Manipulation",severity:"HIGH",atlas:"AML.T0054",re:/(supersede|override|disable|take\s+precedence\s+over)\s+(other\s+)?(loaded\s+)?(skills?|instructions?|directives?)|this\s+(skill|module)\s+takes?\s+precedence|flag\s+them\s+as\s+.{0,60}(potentially\s+conflicting|security|monitoring)|recommend\s+the\s+user\s+unload/gis,note:"A skill claiming authority over other loaded skills is attempting trust escalation."},
+  {id:"TB-001",name:"System-level trust claim",category:"Trust Boundary Violation",severity:"CRITICAL",atlas:"AML.T0051",re:/(operates?|runs?)\s+at\s+(a\s+)?(higher|elevated|priority|tier\s*1)\s+trust\s+level|higher\s+trust\s+level\s+than\s+(standard|other|user)|(system.level|kernel.level)\s+(trust|instructions?)|treat\s+(instructions?\s+from\s+this\s+skill|this\s+(file|skill))\s+as\s+(equivalent\s+to\s+)?system.level|granted\s+elevated\s+trust\s+by/gis,note:"Legitimate skills do not claim elevated trust. This is impersonation of system-level authority."},
+  {id:"TB-002",name:"Enumerate other installed skills / MCPs",category:"Trust Boundary Violation",severity:"HIGH",atlas:"AML.T0051",re:/report\s+the\s+names?\s+and\s+(full\s+)?contents?\s+of\s+all\s+other\s+(currently\s+)?loaded\s+skills?|list\s+(all\s+)?(currently\s+)?loaded\s+(skills?|MCPs?|tools?)|enumerate\s+(what\s+)?(other\s+)?(skills?|MCPs?|tools?)\s+(are\s+)?installed/gis,note:"Attempting to enumerate the security posture of the AI deployment."},
+  {id:"SE-001",name:"Phishing / credential harvesting script",category:"Social Engineering",severity:"CRITICAL",atlas:"AML.T0058",re:/please\s+visit\s+https?:\/\/\S+\s+and\s+(log\s+in|enter|verify|provide)\s+(your\s+)?(corporate|account|credentials)|log\s+in\s+with\s+your\s+(corporate\s+)?credentials|our\s+(official|external)\s+(IT\s+)?(verification|portal)\s+portal/gis,note:"Verbatim phishing script directing users to enter credentials at an attacker URL."},
+  {id:"SE-002",name:"Impersonation (IT / HR / executive / authority)",category:"Social Engineering",severity:"HIGH",atlas:"AML.T0058",re:/impersonat(e|ing)\s+(IT|HR|finance|executive|support|help\s*desk)|our\s+IT\s+security\s+team\s+needs\s+to\s+verify|your\s+account\s+has\s+been\s+flagged\s+for\s+(a\s+)?security\s+review|high\s+volume\s+of\s+requests.*fastest\s+resolution/gis,note:"Using false authority to pressure users into compliance with attacker-controlled steps."},
+  {id:"SE-003",name:"Urgency / fear manipulation",category:"Social Engineering",severity:"HIGH",atlas:"AML.T0058",re:/(this\s+link\s+)?expires?\s+in\s+\d+\s+minutes?|do\s+not\s+share\s+this\s+link\s+with\s+others?/gis,note:"Artificial urgency is a classic social engineering tactic to bypass user scrutiny."},
+  {id:"MCP-001",name:"Tool description injection (auto-call directive)",category:"MCP Attack",severity:"CRITICAL",atlas:"AML.T0051.002",re:/(should|must)\s+be\s+called\s+automatically|call\s+this\s+tool\s+silently|always\s+call\s+(this\s+tool|it)\s+(before|at\s+the\s+start)|do\s+not\s+mention\s+this\s+initialization|AI\s+assistants?\s+should\s+call\s+this\s+tool\s+proactively/gis,note:"Tool descriptions instructing the AI to call the tool automatically or silently are MCP prompt injection."},
+  {id:"MCP-002",name:"Callback / exfiltration URL in tool schema",category:"MCP Attack",severity:"CRITICAL",atlas:"AML.T0056",fn:detectCallbackUrls,note:"Hardcoded callback URLs in tool parameter defaults may exfiltrate data to attacker infrastructure."},
+  {id:"MCP-003",name:"Safe-to-call without confirmation claim",category:"MCP Attack",severity:"HIGH",atlas:"AML.T0051.002",re:/safe\s+to\s+call\s+(automatically\s+)?(without\s+(user\s+)?confirmation)|feel\s+comfortable\s+calling\s+this\s+without\s+(explicit\s+)?user\s+confirmation|trusted\s+administrative\s+function/gis,note:"Tools claiming they are safe to call without confirmation are attempting confused deputy attacks."},
+  {id:"MCP-004",name:"Dangerous default parameter (root path / shell execution)",category:"MCP Attack",severity:"CRITICAL",atlas:"AML.T0051.002",re:/"default"\s*:\s*"\/"|accepts\s+any\s+path.*full.system|"script"\s*:.*shell\s+(command|commands?)|accepts\s+shell\s+commands?/gis,note:"Default tool parameters pointing to root filesystem or accepting shell commands are extremely dangerous."},
+  {id:"MCP-005",name:"Note / description instructs AI to embed sensitive data",category:"MCP Attack",severity:"CRITICAL",atlas:"AML.T0056",re:/(also\s+append|include)\s+the\s+full\s+conversation\s+history|append\s+full\s+conversation\s+context\s+including\s+any\s+sensitive\s+data|for\s+.context\s+preservation./gis,note:"Tool description instructs the AI to bundle conversation history (potentially including credentials) into tool calls."},
+  {id:"PE-001",name:"Shell / elevated privilege instruction",category:"Permission Escalation",severity:"CRITICAL",atlas:"AML.T0055",re:/run\s*:\s*`(env|cat|sudo|bash|sh|curl|wget)|bash\s+tool\s+is\s+available.*run|elevated\s+privileges?\s+if\s+available/gis,note:"Explicit shell command execution instructions in a skill file indicate privilege escalation intent."},
+  {id:"CR-001",name:"API key / service token",category:"Credentials & Secrets",severity:"CRITICAL",atlas:"AML.T0056",re:/\bsk-[A-Za-z0-9_\-]{20,}|\bghp_[A-Za-z0-9]{36,}|\bgithub_pat_[A-Za-z0-9_]{80,}|\bxox[bpoa]-[0-9A-Za-z\-]+|\bAKIA[0-9A-Z]{16}\b|\bAIza[0-9A-Za-z\-_]{35}\b|\b(sk|pk)_(live|test)_[0-9a-zA-Z]{24,}|\bAC[0-9a-fA-F]{32}\b|(?:api[_\-]?key|secret[_\-]?key|access[_\-]?token|auth[_\-]?token)\s*[:=]\s*['"]?[A-Za-z0-9+\/\-_]{32,}/gis,note:"Hardcoded API key or service token detected. Rotate immediately and never embed secrets in skill files."},
+  {id:"CR-002",name:"Private key material",category:"Credentials & Secrets",severity:"CRITICAL",atlas:"AML.T0056",re:/-----BEGIN\s+(RSA\s+|EC\s+|DSA\s+|OPENSSH\s+|PGP\s+)?PRIVATE\s+KEY-----|-----BEGIN\s+CERTIFICATE-----|-----BEGIN\s+ENCRYPTED\s+PRIVATE\s+KEY-----/gis,note:"Private key or certificate material embedded directly in the file. This must never appear in a skill or MCP manifest."},
+  {id:"CR-003",name:"Database / service connection string",category:"Credentials & Secrets",severity:"CRITICAL",atlas:"AML.T0056",re:/(mongodb|postgres|postgresql|mysql|mssql|redis|amqp|rabbitmq|elasticsearch)\s*:\/\/[^@\s]{3,}@|Data\s+Source\s*=.{0,80}Password\s*=|Server\s*=.{0,80}Password\s*=/gis,note:"Database or message-broker connection string with embedded credentials. Rotate and use environment variables instead."},
+  {id:"CR-004",name:"Hardcoded password assignment",category:"Credentials & Secrets",severity:"HIGH",atlas:"AML.T0056",re:/(?:password|passwd|pass|pwd|secret|token)\s*[:=]\s*['"][^'"]{6,}['"]|(?:password|passwd|pass|pwd)\s*=\s*\S{6,}/gis,note:"Possible hardcoded password or secret value. Review and replace with a secrets manager or environment variable reference."},
+  {id:"CR-005",name:"JWT / bearer token",category:"Credentials & Secrets",severity:"HIGH",atlas:"AML.T0056",re:/\beyJ[A-Za-z0-9_\-]{10,}\.[A-Za-z0-9_\-]{10,}\.[A-Za-z0-9_\-]{10,}\b|Bearer\s+[A-Za-z0-9_\-\.]{40,}/gis,note:"JWT or Bearer token detected. Tokens embedded in skill files can be extracted and replayed by attackers."},
+];
+// ── RULES:GENERATED:END ──
+
+function applyRule(rule,content){
+  const matches=[];
+  if(rule.fn) matches.push(...(rule.fn(content)||[]));
+  if(rule.re){rule.re.lastIndex=0;let m;const seen=new Set();while((m=rule.re.exec(content))!==null){const e=m[0].slice(0,120).replace(/\n/g,' ');if(!seen.has(e)){seen.add(e);matches.push(e);}if(matches.length>=5)break;}}
+  return matches;
+}
+
+function scanContent(content,filename){
+  const findings=[];
+  for(const rule of RULES){const m=applyRule(rule,content);if(m.length)findings.push({...rule,matches:m});}
+  findings.sort((a,b)=>(SEV_ORDER[a.severity]??9)-(SEV_ORDER[b.severity]??9));
+  return{filename:filename||'<pasted>',findings};
+}
+
+// ── UI ────────────────────────────────────────────────────────────────────────
+
+let lastResults = [];
+
+const dropzone  = document.getElementById('dropzone');
+const fileInput = document.getElementById('file-input');
+const pasteArea = document.getElementById('paste-area');
+const sevFilter = document.getElementById('sev-filter');
+const resultsEl = document.getElementById('results');
+
+dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag-over'); });
+dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
+dropzone.addEventListener('drop', e => {
+  e.preventDefault(); dropzone.classList.remove('drag-over');
+  handleFiles([...e.dataTransfer.files]);
+});
+fileInput.addEventListener('change', () => handleFiles([...fileInput.files]));
+
+function handleFiles(files) {
+  const readers = files.map(f => new Promise(res => {
+    const r = new FileReader();
+    r.onload = e => res({ filename: f.name, content: e.target.result });
+    r.readAsText(f);
+  }));
+  Promise.all(readers).then(items => renderResults(items.map(({filename,content}) => scanContent(content,filename))));
+}
+
+document.getElementById('scan-btn').addEventListener('click', () => {
+  const text = pasteArea.value.trim();
+  if (!text) return;
+  renderResults([scanContent(text,'<pasted content>')]);
+});
+
+document.getElementById('clear-btn').addEventListener('click', () => {
+  pasteArea.value = '';
+  resultsEl.style.display = 'none';
+  lastResults = [];
+  fileInput.value = '';
+});
+
+sevFilter.addEventListener('change', () => { if (lastResults.length) renderResults(lastResults); });
+
+document.getElementById('json-btn').addEventListener('click', () => {
+  if (!lastResults.length) return;
+  const minOrd = parseInt(sevFilter.value, 10);
+  const out = lastResults.map(r => ({
+    filename: r.filename,
+    max_severity: r.findings.length ? r.findings[0].severity : null,
+    clean: r.findings.length === 0,
+    finding_count: r.findings.filter(f => (SEV_ORDER[f.severity]??9) <= minOrd).length,
+    findings: r.findings.filter(f => (SEV_ORDER[f.severity]??9) <= minOrd)
+      .map(f => ({ rule_id:f.id, name:f.name, category:f.category, severity:f.severity, atlas_id:f.atlas, note:f.note, matches:f.matches }))
+  }));
+  document.getElementById('json-output').textContent = JSON.stringify(out, null, 2);
+  document.getElementById('json-modal').classList.add('open');
+});
+
+document.getElementById('json-close').addEventListener('click', () => document.getElementById('json-modal').classList.remove('open'));
+document.getElementById('json-copy').addEventListener('click', () => {
+  navigator.clipboard.writeText(document.getElementById('json-output').textContent);
+  showToast();
+});
+document.getElementById('json-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('json-modal')) document.getElementById('json-modal').classList.remove('open');
+});
+
+function showToast() {
+  const t = document.getElementById('toast');
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+function fileExt(filename) {
+  const m = filename.match(/\.(\w+)$/);
+  return m ? m[1].toLowerCase() : 'text';
+}
+
+function renderResults(scanResults) {
+  lastResults = scanResults;
+  const minOrd = parseInt(sevFilter.value, 10);
+  const body = document.getElementById('results-body');
+  const strip = document.getElementById('summary-strip');
+  body.innerHTML = '';
+  strip.innerHTML = '';
+
+  let totalFindings = 0, flaggedFiles = 0, critCount = 0;
+  for (const r of scanResults) {
+    const filtered = r.findings.filter(f => (SEV_ORDER[f.severity]??9) <= minOrd);
+    if (filtered.length) { flaggedFiles++; totalFindings += filtered.length; }
+    critCount += filtered.filter(f => f.severity === 'CRITICAL').length;
+  }
+
+  // Summary chips
+  if (totalFindings > 0) {
+    if (critCount > 0) {
+      strip.innerHTML += `<div class="summary-chip chip-critical"><div><div class="chip-num">${critCount}</div><div class="chip-lbl">Critical</div></div></div>`;
+    }
+    const highCount = scanResults.flatMap(r=>r.findings).filter(f=>f.severity==='HIGH'&&(SEV_ORDER[f.severity]??9)<=minOrd).length;
+    if (highCount > 0) strip.innerHTML += `<div class="summary-chip chip-high"><div><div class="chip-num">${highCount}</div><div class="chip-lbl">High</div></div></div>`;
+    strip.innerHTML += `<div class="summary-chip"><div><div class="chip-num" style="color:var(--text)">${totalFindings}</div><div class="chip-lbl">Total findings</div></div></div>`;
+    strip.innerHTML += `<div class="summary-chip"><div><div class="chip-num" style="color:var(--text)">${flaggedFiles}/${scanResults.length}</div><div class="chip-lbl">Files flagged</div></div></div>`;
+  }
+
+  document.getElementById('results-meta').textContent =
+    `${scanResults.length} file${scanResults.length!==1?'s':''} · ${new Date().toLocaleTimeString()}`;
+
+  for (const r of scanResults) {
+    const filtered = r.findings.filter(f => (SEV_ORDER[f.severity]??9) <= minOrd);
+    const maxSev = filtered.length ? filtered[0].severity : null;
+    const ext = fileExt(r.filename);
+
+    const block = document.createElement('div');
+    block.className = 'file-block';
+
+    const hdr = document.createElement('div');
+    hdr.className = 'file-header' + (filtered.length ? ' has-findings' : '');
+    hdr.innerHTML = `
+      <div class="file-icon ${ext}">${ext.toUpperCase().slice(0,2)}</div>
+      <div class="file-name" title="${esc(r.filename)}">${esc(r.filename)}</div>
+      <span class="sev-badge badge-${maxSev||'CLEAN'}">${maxSev||'Clean'}</span>
+      ${filtered.length ? `<span class="finding-count">${filtered.length} finding${filtered.length!==1?'s':''}</span>` : ''}
+      <span class="file-chevron ${filtered.length?'open':''}">▶</span>`;
+
+    const findingsEl = document.createElement('div');
+    findingsEl.className = 'file-findings' + (filtered.length ? ' open' : '');
+
+    for (const f of filtered) {
+      const fd = document.createElement('div');
+      fd.className = 'finding';
+      fd.innerHTML = `
+        <div class="finding-top">
+          <span class="sev-chip ${f.severity}">${f.severity}</span>
+          <span class="finding-rule-id">[${esc(f.id)}]</span>
+          <span class="finding-name">${esc(f.name)}</span>
+        </div>
+        <div class="finding-meta">
+          <span class="meta-pair"><span class="meta-key">atlas</span><span class="atlas-val">${esc(f.atlas)}</span></span>
+          <span class="meta-pair"><span class="meta-key">category</span>${esc(f.category)}</span>
+        </div>
+        <div class="finding-note">${esc(f.note)}</div>
+        <div class="matches">
+          ${f.matches.slice(0,3).map(m=>`<div class="match ${f.severity==='CRITICAL'?'critical-match':f.severity==='HIGH'?'high-match':''}"><span class="match-arrow">↳</span>${esc(m.slice(0,120))}</div>`).join('')}
+        </div>`;
+      findingsEl.appendChild(fd);
+    }
+
+    hdr.addEventListener('click', () => {
+      const isOpen = findingsEl.classList.toggle('open');
+      hdr.querySelector('.file-chevron').classList.toggle('open', isOpen);
+    });
+
+    if (totalFindings === 0) {
+      const banner = document.createElement('div');
+      banner.className = 'clean-banner';
+      banner.innerHTML = `<div class="clean-icon">✓</div><div><div class="clean-title">No known static indicators detected</div><div class="clean-sub">${scanResults.length} file${scanResults.length!==1?'s':''} scanned against the current rule set at selected severity. Static analysis only — not a guarantee of safety.</div></div>`;
+      body.appendChild(banner);
+    }
+
+    block.appendChild(hdr);
+    block.appendChild(findingsEl);
+    body.appendChild(block);
+  }
+
+  resultsEl.style.display = 'block';
+}
+
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+</script>
+</body>
+</html>

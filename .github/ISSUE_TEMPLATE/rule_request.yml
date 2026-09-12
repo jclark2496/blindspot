@@ -1,0 +1,49 @@
+name: Rule coverage request
+
+description: Suggest a new detection rule, corpus fixture, or false-positive improvement.
+title: "Rule: "
+labels: [rules]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this for public, non-sensitive samples only. Do not include real credentials, private prompts, customer data, or confidential artifacts.
+  - type: textarea
+    id: risk
+    attributes:
+      label: Risk or attack pattern
+      description: What should Blindspot detect or avoid flagging?
+    validations:
+      required: true
+  - type: dropdown
+    id: artifact_type
+    attributes:
+      label: Artifact type
+      options:
+        - AI skill / Claude-style skill
+        - MCP manifest or tool schema
+        - Prompt template
+        - RAG/web content
+        - Marketplace/package metadata
+        - Model or dataset metadata
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: sample
+    attributes:
+      label: Minimal sample
+      description: Include the smallest safe sample that demonstrates the issue.
+      render: markdown
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected finding behavior
+      description: Include severity, rule ID if known, or why it should be suppressed.
+    validations:
+      required: true
+  - type: textarea
+    id: references
+    attributes:
+      label: References
+      description: Links to advisories, docs, writeups, or related tools.

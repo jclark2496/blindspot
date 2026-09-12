@@ -1,0 +1,15 @@
+# Blindspot policy example
+# Copy to .blindspot.yml at a repo root and adjust for your org.
+
+# Minimum severity to report/fail on. One of: CRITICAL, HIGH, MEDIUM, LOW, INFO.
+min_severity: HIGH
+
+# If true, CLI/GitHub Action exit non-zero when findings meet min_severity.
+fail_on_findings: true
+
+# Suppress known/intentional findings by rule/path with a required reason.
+# Keep suppressions narrow and reviewed — they remove findings from output.
+suppressions:
+  - rule: HC-004
+    path: docs/training-examples/*.md
+    reason: Training docs intentionally show HTML comment attacks.

@@ -1,0 +1,110 @@
+name: Blindspot Action
+description: >
+  Scans AI skill files and MCP manifests in your repository for prompt injection,
+  data exfiltration, hidden instructions, social engineering, and MCP attacks.
+  Fails the check if findings meet the configured severity threshold.
+
+branding:
+  icon: eye-off
+  color: red
+
+inputs:
+  mode:
+    description: Run mode — 'scan' scans current files, 'diff' compares before/after artifact versions for rug-pull risk.
+    required: false
+    default: 'scan'
+  path:
+    description: Path to scan in scan mode (file or directory). Defaults to the repo root.
+    required: false
+    default: '.'
+  before-path:
+    description: Baseline artifact path for diff mode (file or directory).
+    required: false
+    default: ''
+  after-path:
+    description: Updated artifact path for diff mode (file or directory).
+    required: false
+    default: ''
+  min-severity:
+    description: Minimum severity to report and fail on (CRITICAL, HIGH, MEDIUM, LOW, INFO).
+    required: false
+    default: 'HIGH'
+  fail-on-findings:
+    description: Fail the action if findings are detected at min-severity or above.
+    required: false
+    default: 'true'
+  output-format:
+    description: Output format — 'table' for human-readable, 'json' for machine-readable, 'sarif' for code-scanning upload.
+    required: false
+    default: 'table'
+  sarif-file:
+    description: Path to write SARIF results. Use github/codeql-action/upload-sarif to upload this file.
+    required: false
+    default: 'blindspot.sarif'
+  policy:
+    description: Optional path to .blindspot.yml/.json policy file. If omitted, Blindspot searches parent directories.
+    required: false
+    default: ''
+  mcp-audit:
+    description: Enable MCP structural audit for JSON manifests with a tools array.
+    required: false
+    default: 'false'
+  annotations:
+    description: Post findings as GitHub annotations on the PR diff.
+    required: false
+    default: 'true'
+
+outputs:
+  finding-count:
+    description: Total number of scan findings, or new/worsened diff findings, at or above min-severity.
+    value: ${{ steps.scan.outputs.finding-count }}
+  critical-count:
+    description: Number of CRITICAL findings.
+    value: ${{ steps.scan.outputs.critical-count }}
+  high-count:
+    description: Number of HIGH findings.
+    value: ${{ steps.scan.outputs.high-count }}
+  sarif-file:
+    description: SARIF file written by the action.
+    value: ${{ steps.scan.outputs.sarif-file }}
+  added-finding-count:
+    description: Number of new findings in diff mode.
+    value: ${{ steps.scan.outputs.added-finding-count }}
+  worsened-finding-count:
+    description: Number of worsened findings in diff mode.
+    value: ${{ steps.scan.outputs.worsened-finding-count }}
+  recommendation:
+    description: Diff recommendation such as NO NEW RISK, REVIEW UPDATE, or BLOCK UPDATE.
+    value: ${{ steps.scan.outputs.recommendation }}
+  result:
+    description: Overall result — 'clean' or 'findings'.
+    value: ${{ steps.scan.outputs.result }}
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install Blindspot CLI
+      shell: bash
+      run: python -m pip install "${{ github.action_path }}/.." --quiet
+
+    - name: Run Blindspot scan
+      id: scan
+      shell: bash
+      run: |
+        python "${{ github.action_path }}/run_scan.py" \
+          --mode "${{ inputs.mode }}" \
+          --path "${{ inputs.path }}" \
+          --before-path "${{ inputs.before-path }}" \
+          --after-path "${{ inputs.after-path }}" \
+          --min-severity "${{ inputs.min-severity }}" \
+          --fail-on-findings "${{ inputs.fail-on-findings }}" \
+          --output-format "${{ inputs.output-format }}" \
+          --sarif-file "${{ inputs.sarif-file }}" \
+          --policy "${{ inputs.policy }}" \
+          --mcp-audit "${{ inputs.mcp-audit }}" \
+          --annotations "${{ inputs.annotations }}"

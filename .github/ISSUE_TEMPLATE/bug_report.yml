@@ -1,0 +1,60 @@
+name: Bug report
+
+description: Report a reproducible Blindspot bug.
+title: "Bug: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. If this is a security-sensitive issue, please follow `SECURITY.md` instead of opening a public issue.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What happened?
+    validations:
+      required: true
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      options:
+        - CLI scanner
+        - Rule catalog
+        - GitHub Action
+        - Chrome extension
+        - Standalone browser scanner
+        - Demo site
+        - Documentation
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduction steps
+      description: Include commands, files, or a minimal sample artifact with secrets removed.
+      placeholder: |
+        1. Run ...
+        2. Scan ...
+        3. Observe ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, Python version, Node version, browser/extension version if relevant.

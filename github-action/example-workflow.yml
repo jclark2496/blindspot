@@ -1,0 +1,41 @@
+# Example: add this to .github/workflows/blindspot.yml in your repository
+
+name: Blindspot AI Security Scan
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  blindspot:
+    name: Scan AI skill files
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # Required to post annotations on PR diffs:
+      checks: write
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Blindspot
+        id: blindspot
+        uses: blindspot-ai/blindspot@v1
+        with:
+          path: '.'                  # scan entire repo (default)
+          min-severity: 'HIGH'       # CRITICAL | HIGH | MEDIUM | LOW | INFO
+          fail-on-findings: 'true'   # fail the check if findings are detected
+          output-format: 'table'     # table | json
+          annotations: 'true'        # post inline annotations on PR diffs
+
+      # Optional: use outputs in a subsequent step
+      - name: Print results
+        if: always()
+        run: |
+          echo "Result:   ${{ steps.blindspot.outputs.result }}"
+          echo "Findings: ${{ steps.blindspot.outputs.finding-count }}"
+          echo "Critical: ${{ steps.blindspot.outputs.critical-count }}"
+          echo "High:     ${{ steps.blindspot.outputs.high-count }}"

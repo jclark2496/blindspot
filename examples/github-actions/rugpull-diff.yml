@@ -1,0 +1,39 @@
+name: Blindspot Rug-Pull Diff
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'approved-ai-artifacts/**'
+      - 'incoming-ai-artifacts/**'
+      - '.github/workflows/blindspot-rugpull-diff.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  provenance-diff:
+    name: Block AI artifact rug pulls
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Compare approved baseline to incoming update
+        id: blindspot-diff
+        uses: jclark2496/blindspot/github-action@main
+        with:
+          mode: diff
+          before-path: approved-ai-artifacts
+          after-path: incoming-ai-artifacts
+          min-severity: HIGH
+          fail-on-findings: 'true'
+          output-format: table
+          mcp-audit: 'true'
+
+      - name: Show Blindspot recommendation
+        if: always()
+        run: |
+          echo "Recommendation: ${{ steps.blindspot-diff.outputs.recommendation }}"
+          echo "New findings: ${{ steps.blindspot-diff.outputs.added-finding-count }}"
+          echo "Worsened findings: ${{ steps.blindspot-diff.outputs.worsened-finding-count }}"
