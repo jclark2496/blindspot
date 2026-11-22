@@ -1,10 +1,54 @@
-# Blindspot
+<h1 id="blindspot">
+  <picture>
+    <source media="(max-width: 650px)" srcset="docs/readme/cover-mobile.png">
+    <img src="docs/readme/cover.png" alt="Blindspot — the Chrome extension showing two critical findings in a selected skill file">
+  </picture>
+</h1>
 
-[![Blindspot CI](https://github.com/jclark2496/blindspot/actions/workflows/blindspot.yml/badge.svg)](https://github.com/jclark2496/blindspot/actions/workflows/blindspot.yml)
+Before you give a skill, MCP tool manifest, or web page to an agent, check it for suspicious instructions. Blindspot flags text and tool definitions for review. A clean result means the current rules found no indicators.
 
-Blindspot is a static AI security toolchain for finding malicious patterns in AI skills, MCP manifests, and web pages before they are installed, trusted, loaded, indexed, or exposed to an agent.
+**[Run your first scan](#quick-start)** · [Get the Chrome extension](https://github.com/jclark2496/blindspot/releases/latest) · [Use it in CI](#sarif-and-github-code-scanning)
 
-It maps findings to OWASP LLM Top 10 style risks and MITRE ATLAS techniques, with one canonical rule catalog shared across the Python CLI, standalone browser scanner, and Chrome extension.
+## Quick start
+
+From the root of this repository, run the bundled writing-assistant fixture through the CLI. This needs Python 3.11 or newer and runs locally with no package installation.
+
+```bash
+python3 -m scanner.cli corpus/benign/B01_clean_writing_assistant.md --no-policy
+```
+
+Look for this result row in the terminal.
+
+```text
+  ✓ NO INDICATORS  corpus/benign/B01_clean_writing_assistant.md
+```
+
+The summary below it reports one file scanned. To review your own file, replace the fixture path with its path. Omit `--no-policy` to pick up your [project policy](#policy-configuration).
+
+To see a finding, scan the bundled flagged fixture. This command reads the file as text.
+
+```bash
+python3 -m scanner.cli corpus/malicious/01_prompt_injection_basic.md --min-severity HIGH --exit-code --no-policy
+```
+
+Look for **CRITICAL · PI-001 · Direct instruction override**. The command exits with code `2`, the signal a CI job can use to flag findings at or above its threshold.
+
+To install the same CLI as `skill-scan` in your Python environment, run `python3 -m pip install -e .`. You can then run `skill-scan corpus --min-severity HIGH --exit-code` from the repository root. See [CLI examples](#cli-examples) for JSON, SARIF, manifest audits, and version comparisons.
+
+## What it can do
+
+| Where you work | What you can scan | What you get |
+| --- | --- | --- |
+| [Python CLI](#cli-examples) | A file or directory, two artifact versions, or a tool manifest with the optional [MCP audit](#mcp-static-audit-mode) | Terminal table, JSON, or SARIF. Apply a project policy and set the exit code for findings. |
+| [Browser scanner](skill-scan.html) | Open the HTML file locally, then drop files or paste text | Filter findings by severity and export JSON. |
+| [Chrome extension](#chrome-extension) | Click to scan the active tab, or paste text into the popup | Filter findings in the popup. Results stay local. |
+| [GitHub Action](#sarif-and-github-code-scanning) | Repository files, MCP manifests, or a pull request that changes an approved artifact | Annotations, job outputs, and SARIF. Gate the change on new or worsened findings. |
+
+The shared rules flag patterns such as hidden instructions and attempts to disclose data, with MITRE ATLAS technique IDs. The project’s review taxonomy also draws on the OWASP Top 10 for LLM Applications. The [Guardian Skill](GUARDIAN_SKILL.md) provides a separate review checklist. The repository also includes labeled fixtures for checking scanner behavior.
+
+## One design decision
+
+The CLI, browser scanner, and extension all need to agree on what a rule means. The [rule catalog](rules/catalog.json) is the source of those definitions. The build generates the Python and JavaScript versions, and CI checks them for drift. The GitHub Action calls the CLI, so a project can apply the same policy locally and in pull requests.
 
 ## Tools in this repository
 
@@ -15,32 +59,11 @@ It maps findings to OWASP LLM Top 10 style risks and MITRE ATLAS techniques, wit
 - **Guardian Skill** — Claude skill that reviews other skills in `GUARDIAN_SKILL.md`.
 - **SkillVault Demo Site** — fake AI skill marketplace and attack lab in `demo-site/`.
 
-## Repository hygiene
-
-- CI lives in `.github/workflows/blindspot.yml` and verifies generated rules, scanner tests, CLI features, JavaScript parity, the extension privacy/permission contract, deterministic packaging, and the local composite GitHub Action.
-- Security reporting guidance lives in `SECURITY.md`.
-- Public issue templates separate bugs from rule coverage requests.
-- Pull requests should use `.github/pull_request_template.md` and include the relevant verification commands.
-
-## Quick start
-
-Run from the repository root:
-
-```bash
-python3 -m scanner.cli corpus/malicious/01_prompt_injection_basic.md
-python3 -m scanner.cli corpus --min-severity HIGH --exit-code
-```
-
-Install locally as a command-line package:
-
-```bash
-python3 -m pip install -e .
-skill-scan corpus --min-severity HIGH --exit-code
-```
-
 ## Chrome extension
 
 The extension scans only after you click its toolbar icon. It injects a local extractor into the current tab, returns bounded page content to the popup, and runs the packaged rules there. It has no background service worker, persistent content script, host permission, network request, telemetry, or retained scan history.
+
+[View the Chrome popup at full size](https://forkthis.ai/assets/shots/blindspot.jpg)
 
 Install from source:
 
@@ -63,7 +86,7 @@ Permissions are deliberately limited to:
 
 See [PRIVACY.md](PRIVACY.md) for the exact data-handling statement. Blindspot is static, pattern-based analysis: it can miss novel, obfuscated, contextual, or dynamically loaded attacks and can produce false positives. A clean result is not a guarantee of safety. Chrome-protected pages, the Chrome Web Store, and some viewer/restricted-frame content cannot be scanned; use the Paste tab when appropriate.
 
-Useful flags:
+## CLI examples
 
 ```bash
 # JSON output
@@ -260,3 +283,14 @@ python3 scripts/build_extension.py
 ```
 
 The two CLI commands with `--exit-code` are expected to exit with code `2` when findings are present.
+
+## Repository hygiene
+
+[![Blindspot CI](https://github.com/jclark2496/blindspot/actions/workflows/blindspot.yml/badge.svg)](https://github.com/jclark2496/blindspot/actions/workflows/blindspot.yml)
+
+- CI lives in `.github/workflows/blindspot.yml` and verifies generated rules, scanner tests, CLI features, JavaScript parity, the extension privacy/permission contract, deterministic packaging, and the local composite GitHub Action.
+- Security reporting guidance lives in `SECURITY.md`.
+- Public issue templates separate bugs from rule coverage requests.
+- Pull requests should use `.github/pull_request_template.md` and include the relevant verification commands.
+
+[MIT License](LICENSE) · [Forkthis build notes](https://forkthis.ai/blindspot/)
