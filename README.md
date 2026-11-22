@@ -1,46 +1,42 @@
-# Blindspot
+<h1 id="blindspot">
+  <picture>
+    <source media="(max-width: 650px)" srcset="docs/readme/cover-mobile.png">
+    <img src="docs/readme/cover.png" alt="Blindspot — the Chrome extension showing two critical findings in a selected skill file">
+  </picture>
+</h1>
 
-Check an AI skill, MCP tool manifest, or web page for suspicious instructions before giving it to an agent. A finding points to something to review. A clean scan means the current rules found no indicators.
+Before you give a skill, MCP tool manifest, or web page to an agent, check it for suspicious instructions. Blindspot flags text and tool definitions for review. A clean result means the current rules found no indicators.
 
-[![Blindspot CI](https://github.com/jclark2496/blindspot/actions/workflows/blindspot.yml/badge.svg)](https://github.com/jclark2496/blindspot/actions/workflows/blindspot.yml)
-
-![Blindspot’s Chrome popup showing findings for a selected skill file](https://forkthis.ai/assets/shots/blindspot.jpg)
-
-[Run your first scan](#quick-start) · [Get the Chrome extension](https://github.com/jclark2496/blindspot/releases/latest)
-
-## What it can do
-
-| Task | Python CLI | Browser scanner | Chrome extension | GitHub Action |
-| --- | --- | --- | --- | --- |
-| Scan for known patterns | File or directory | Drop files or paste text | Active tab or pasted text | Repository files |
-| Review results | Terminal table or JSON | Filter by severity and export JSON | Filter findings in the popup | Annotations and job outputs |
-| Audit MCP tool definitions | Optional structural checks | — | — | Optional structural checks |
-| Compare an update with an approved version | Diff files or directories | — | — | Gate a pull request on new or worsened findings |
-| Apply a project policy or produce SARIF | Policy file and SARIF export | — | — | Policy file and SARIF artifact |
-
-The shared rules flag patterns such as hidden instructions and attempts to disclose data, with mappings to OWASP LLM risks and MITRE ATLAS techniques. The [Guardian Skill](GUARDIAN_SKILL.md) provides a separate review checklist. The repository also includes labeled fixtures for checking scanner behavior.
+**[Run your first scan](#quick-start)** · [Get the Chrome extension](https://github.com/jclark2496/blindspot/releases/latest) · [Use it in CI](#sarif-and-github-code-scanning)
 
 ## Quick start
 
-With Python 3.11 or newer, run the scanner from the repository root. This first example reads a bundled writing-assistant fixture locally.
+From the root of this repository, run the bundled writing-assistant fixture through the CLI. This needs Python 3.11 or newer and runs locally with no package installation.
 
 ```bash
 python3 -m scanner.cli corpus/benign/B01_clean_writing_assistant.md --no-policy
 ```
 
-Look for `NO INDICATORS` beside the filename and a summary of one file scanned. To see how the report presents findings, scan the labeled test fixture below.
+Look for this result row in the terminal.
 
-```bash
-python3 -m scanner.cli corpus/malicious/01_prompt_injection_basic.md
-python3 -m scanner.cli corpus --min-severity HIGH --exit-code
+```text
+  ✓ NO INDICATORS  corpus/benign/B01_clean_writing_assistant.md
 ```
 
-Install locally as a command-line package:
+The summary below it reports one file scanned. To review your own file, replace the fixture path with its path. Omit `--no-policy` to pick up your [project policy](#policy-configuration).
 
-```bash
-python3 -m pip install -e .
-skill-scan corpus --min-severity HIGH --exit-code
-```
+To install the same CLI as `skill-scan` in your Python environment, run `python3 -m pip install -e .`. See [CLI examples](#cli-examples) for JSON, SARIF, manifest audits, and version comparisons.
+
+## What it can do
+
+| Where you work | What you can scan | What you get |
+| --- | --- | --- |
+| [Python CLI](#cli-examples) | A file or directory, two artifact versions, or a tool manifest with the optional [MCP audit](#mcp-static-audit-mode) | Terminal table, JSON, or SARIF. Apply a project policy and set the exit code for findings. |
+| [Browser scanner](skill-scan.html) | Open the HTML file locally, then drop files or paste text | Filter findings by severity and export JSON. |
+| [Chrome extension](#chrome-extension) | Click to scan the active tab, or paste text into the popup | Filter findings in the popup. Results stay local. |
+| [GitHub Action](#sarif-and-github-code-scanning) | Repository files, MCP manifests, or a pull request that changes an approved artifact | Annotations, job outputs, and SARIF. Gate the change on new or worsened findings. |
+
+The shared rules flag patterns such as hidden instructions and attempts to disclose data, with mappings to OWASP LLM risks and MITRE ATLAS techniques. The [Guardian Skill](GUARDIAN_SKILL.md) provides a separate review checklist. The repository also includes labeled fixtures for checking scanner behavior.
 
 ## One design decision
 
@@ -58,6 +54,8 @@ The CLI, browser scanner, and extension all need to agree on what a rule means. 
 ## Chrome extension
 
 The extension scans only after you click its toolbar icon. It injects a local extractor into the current tab, returns bounded page content to the popup, and runs the packaged rules there. It has no background service worker, persistent content script, host permission, network request, telemetry, or retained scan history.
+
+[View the Chrome popup at full size](https://forkthis.ai/assets/shots/blindspot.jpg)
 
 Install from source:
 
@@ -279,6 +277,8 @@ python3 scripts/build_extension.py
 The two CLI commands with `--exit-code` are expected to exit with code `2` when findings are present.
 
 ## Repository hygiene
+
+[![Blindspot CI](https://github.com/jclark2496/blindspot/actions/workflows/blindspot.yml/badge.svg)](https://github.com/jclark2496/blindspot/actions/workflows/blindspot.yml)
 
 - CI lives in `.github/workflows/blindspot.yml` and verifies generated rules, scanner tests, CLI features, JavaScript parity, the extension privacy/permission contract, deterministic packaging, and the local composite GitHub Action.
 - Security reporting guidance lives in `SECURITY.md`.

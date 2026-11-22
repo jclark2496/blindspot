@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Blindspot · README cover source</title>
+<style>
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; }
+.cover { --ink: #152b54; --muted: #415579; color: var(--ink); position: relative; isolation: isolate; overflow: hidden; width: 100%; max-width: 1200px; aspect-ratio: 1200/508; container-type: inline-size; background: var(--paper); }
+.cover h1, .cover p { margin: 0; }
+.top, .foot { position: absolute; left: 4.5%; z-index: 4; }
+.top { top: 9%; display: flex; align-items: center; gap: .85cqw; }
+.mark { display: block; width: 1.55cqw; height: 2.4cqw; }
+.word { font-size: 1.9cqw; font-weight: 700; letter-spacing: -.09cqw; }
+.copy { position: absolute; z-index: 3; left: 4.5%; top: 32%; width: 47%; }
+h1 { font-size: 8.8cqw; font-weight: 600; letter-spacing: -.67cqw; line-height: .88; }
+.sub { font-size: 2.05cqw; line-height: 1.18; font-weight: 450; letter-spacing: -.062cqw; max-width: 31cqw; margin-top: 2.15cqw !important; }
+.foot, .note { font: 500 1.07cqw/1.3 ui-monospace, Menlo, Consolas, monospace; letter-spacing: -.025cqw; }
+.foot { bottom: 8%; color: var(--muted); display: flex; align-items: center; gap: .75cqw; }
+.rule { height: 1px; width: 2.6cqw; background: currentColor; }
+.note { position: absolute; color: var(--muted); right: 4.5%; top: 11.4%; z-index: 1; }
+@media (max-width: 650px) {
+  .cover { aspect-ratio: 600/550; }
+  .top { top: 6%; gap: 1.5cqw; }
+  .word { font-size: 3.55cqw; }
+  .mark { width: 2.7cqw; height: 4.2cqw; }
+  .top,.copy,.foot { left: 6%; }
+  .copy { top: 18%; width: 88%; }
+  h1 { font-size: 11.6cqw; letter-spacing: -.75cqw; }
+  .sub { font-size: 3.9cqw; max-width: 74cqw; margin-top: 2.4cqw !important; }
+  .note { right: 6%; top: 7.4%; font-size: 2.25cqw; }
+  .foot { bottom: 4.5%; font-size: 2.4cqw; gap: 1.5cqw; }
+  .rule { width: 5cqw; }
+}
+
+.cover { --paper: #121918; --ink: #f5f5e9; --muted: #b0beb0; }
+.copy { top: 34%; width: 45%; }
+h1 { font-size: 7.95cqw; letter-spacing: -.57cqw; }
+.signal { position: absolute; right: -7%; top: -31%; width: 66cqw; height: 66cqw; border-radius: 50%; z-index: -1; background: repeating-radial-gradient(circle at 50% 50%, transparent 0 1.5cqw, #b7f37c44 1.55cqw 1.62cqw, transparent 1.67cqw 2.6cqw); }
+.scope { position: absolute; right: -13%; bottom: -80%; width: 64cqw; height: 64cqw; z-index: -2; border-radius: 50%; background: #33473a; }
+.specimen { position: absolute; right: 5%; width: 43%; top: 21%; aspect-ratio: 671/494; overflow: hidden; border-radius: .7cqw; background: #fff; box-shadow: .3cqw 1.6cqw 3cqw #0006; }
+.specimen img { display: block; position: absolute; width: 178.84%; max-width: none; left: -39.49%; top: -26.1%; }
+.top .mark { color: #c7fa82; }
+.tag { font-size: inherit; color: var(--muted); }
+.note { top: 10.8%; color: #d6e5c7; }
+@media (max-width:650px) {
+  .copy { top: 18%; width: 90%; }
+  h1 { font-size: 12.5cqw; letter-spacing: -.9cqw; }
+  .sub { max-width: 78%; }
+  .specimen { top: 48%; right: 10%; width: 80%; }
+  .signal { top: 6%; right: -38%; width: 118cqw; height: 118cqw; }
+  .scope { width: 108cqw; height: 108cqw; }
+  .foot { display: none; }
+  .note { top: 7.3%; }
+}
+</style>
+<!-- Edit this source, then export the .cover element at 1200px and 600px viewport widths. -->
+<main class="cover">
+  <div class="top"><svg class="mark" aria-hidden="true" viewBox="0 0 18 29" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round"><path d="M3 2v7c0 4 6 4 6 8v10M7 2v7c0 3 2 4 2 7M11 2v7c0 3-2 4-2 7m6-14v7c0 4-6 4-6 8"/><circle cx="9" cy="24" r="1" fill="currentColor"/></svg><span class="word">forkthis</span></div>
+  <div class="note">Chrome extension</div>
+  <div class="copy"><h1>Blindspot</h1><p class="sub">Inspect AI skills before giving them to an agent.</p></div>
+  <p class="foot"><span class="rule"></span>Static analysis · AI tooling</p>
+  <div class="signal" aria-hidden="true"></div><div class="scope" aria-hidden="true"></div>
+  <div class="specimen"><img src="https://forkthis.ai/assets/shots/blindspot.jpg" alt="Blindspot reports two critical findings in the selected skill file"></div>
+</main>
+</html>
