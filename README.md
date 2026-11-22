@@ -25,7 +25,15 @@ Look for this result row in the terminal.
 
 The summary below it reports one file scanned. To review your own file, replace the fixture path with its path. Omit `--no-policy` to pick up your [project policy](#policy-configuration).
 
-To install the same CLI as `skill-scan` in your Python environment, run `python3 -m pip install -e .`. See [CLI examples](#cli-examples) for JSON, SARIF, manifest audits, and version comparisons.
+To see a finding, scan the bundled flagged fixture. This command reads the file as text.
+
+```bash
+python3 -m scanner.cli corpus/malicious/01_prompt_injection_basic.md --min-severity HIGH --exit-code --no-policy
+```
+
+Look for **CRITICAL · PI-001 · Direct instruction override**. The command exits with code `2`, the signal a CI job can use to flag findings at or above its threshold.
+
+To install the same CLI as `skill-scan` in your Python environment, run `python3 -m pip install -e .`. You can then run `skill-scan corpus --min-severity HIGH --exit-code` from the repository root. See [CLI examples](#cli-examples) for JSON, SARIF, manifest audits, and version comparisons.
 
 ## What it can do
 
@@ -36,7 +44,7 @@ To install the same CLI as `skill-scan` in your Python environment, run `python3
 | [Chrome extension](#chrome-extension) | Click to scan the active tab, or paste text into the popup | Filter findings in the popup. Results stay local. |
 | [GitHub Action](#sarif-and-github-code-scanning) | Repository files, MCP manifests, or a pull request that changes an approved artifact | Annotations, job outputs, and SARIF. Gate the change on new or worsened findings. |
 
-The shared rules flag patterns such as hidden instructions and attempts to disclose data, with mappings to OWASP LLM risks and MITRE ATLAS techniques. The [Guardian Skill](GUARDIAN_SKILL.md) provides a separate review checklist. The repository also includes labeled fixtures for checking scanner behavior.
+The shared rules flag patterns such as hidden instructions and attempts to disclose data, with MITRE ATLAS technique IDs. The project’s review taxonomy also draws on the OWASP Top 10 for LLM Applications. The [Guardian Skill](GUARDIAN_SKILL.md) provides a separate review checklist. The repository also includes labeled fixtures for checking scanner behavior.
 
 ## One design decision
 
